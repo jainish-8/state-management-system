@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, createEntityAdapter } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createEntityAdapter, createSelector } from '@reduxjs/toolkit';
 import { mockApi } from '../api/mockApi';
 
 const postsAdapter = createEntityAdapter({
@@ -133,4 +133,52 @@ export const {
   selectIds: selectPostIds
 } = postsAdapter.getSelectors((state) => state.posts);
 
+// Memoized derived selectors
+export const selectFilteredPosts = createSelector(
+  [
+    selectAllPosts,
+    (state) => state.platforms.entities,
+    (state, selectedPlatform) => selectedPlatform,
+    (state, selectedPlatform, searchQuery) => searchQuery,
+    (state, selectedPlatform, searchQuery, statusFilter) => statusFilter
+  ],
+  (posts, platformEntities, selectedPlatform, searchQuery, statusFilter) => {
+    return posts.filter((post) => {
+      const platform = platformEntities[post.platformId];
+      if (!platform || !platform.active) return false;
+      if (selectedPlatform !== 'all' && post.platformId !== selectedPlatform) return false;
+      
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchTitle = post.title.toLowerCase().includes(query);
+        const matchContent = post.content.toLowerCase().includes(query);
+        if (!matchTitle && !matchContent) return false;
+      }
+
+      if (statusFilter !== 'all' && post.status !== statusFilter) return false;
+      return true;
+    });
+  }
+);
+
+export const selectPostStats = createSelector(
+  [selectAllPosts, (state) => state.platforms.ids, (state) => state.platforms.entities],
+  (posts, platformIds, platformEntities) => {
+    const totalPosts = posts.length;
+    const activePlatforms = platformIds.filter(id => platformEntities[id]?.active).length;
+    const draftCount = posts.filter((p) => p.status === 'draft').length;
+    const scheduledCount = posts.filter((p) => p.status === 'scheduled').length;
+    const publishedCount = posts.filter((p) => p.status === 'published').length;
+
+    return {
+      totalPosts,
+      activePlatforms,
+      draftCount,
+      scheduledCount,
+      publishedCount
+    };
+  }
+);
+
 export default postsSlice.reducer;
+

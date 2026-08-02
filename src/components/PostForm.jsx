@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addPost, updatePost, clearErrors } from '../store/postsSlice';
 import { selectAllPlatforms } from '../store/platformsSlice';
+import { useRenderCounter } from '../hooks/useRenderCounter';
 
-export const PostForm = ({ editPostId, onCancelEdit }) => {
+const PostFormComponent = ({ editPostId, onCancelEdit }) => {
   const dispatch = useDispatch();
+  const renderCount = useRenderCounter();
+  
   const platforms = useSelector(selectAllPlatforms);
   const activePlatforms = platforms.filter((p) => p.active);
   
@@ -36,7 +39,6 @@ export const PostForm = ({ editPostId, onCancelEdit }) => {
       // Defaults for new post
       setTitle('');
       setContent('');
-      // Set to first active platform if available
       if (activePlatforms.length > 0) {
         setPlatformId(activePlatforms[0].id);
       } else {
@@ -99,7 +101,6 @@ export const PostForm = ({ editPostId, onCancelEdit }) => {
       dispatch(addPost(postPayload))
         .unwrap()
         .then(() => {
-          // Clear inputs on success
           setTitle('');
           setContent('');
           setStatus('draft');
@@ -113,7 +114,8 @@ export const PostForm = ({ editPostId, onCancelEdit }) => {
 
   if (activePlatforms.length === 0) {
     return (
-      <div className="card form-card">
+      <div className="card form-card render-tracker-container">
+        <span className="render-badge">Form Renders: {renderCount}</span>
         <h2 className="card-title">Compose Content</h2>
         <div className="alert-message warning">
           No active publishing channels found. Please enable at least one channel in the sidebar to compose a post.
@@ -123,7 +125,10 @@ export const PostForm = ({ editPostId, onCancelEdit }) => {
   }
 
   return (
-    <div className="card form-card">
+    <div className="card form-card render-tracker-container">
+      {/* Visual Render Counter Badge */}
+      <span className="render-badge">Form Renders: {renderCount}</span>
+
       <h2 className="card-title">
         {editingPost ? 'Edit Post Configuration' : 'Compose New Post'}
       </h2>
@@ -237,3 +242,6 @@ export const PostForm = ({ editPostId, onCancelEdit }) => {
     </div>
   );
 };
+
+// Wrap in React.memo to isolate local edits from parent layout triggers.
+export const PostForm = React.memo(PostFormComponent);

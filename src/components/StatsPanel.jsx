@@ -1,21 +1,25 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectAllPosts } from '../store/postsSlice';
-import { selectAllPlatforms } from '../store/platformsSlice';
+import { selectPostStats } from '../store/postsSlice';
+import { useRenderCounter } from '../hooks/useRenderCounter';
 
-export const StatsPanel = () => {
-  const posts = useSelector(selectAllPosts);
-  const platforms = useSelector(selectAllPlatforms);
-
-  const totalPosts = posts.length;
-  const activePlatforms = platforms.filter((p) => p.active).length;
+const StatsPanelComponent = () => {
+  const renderCount = useRenderCounter();
   
-  const draftCount = posts.filter((p) => p.status === 'draft').length;
-  const scheduledCount = posts.filter((p) => p.status === 'scheduled').length;
-  const publishedCount = posts.filter((p) => p.status === 'published').length;
+  // Extract pre-computed and memoized statistics from store
+  const {
+    totalPosts,
+    activePlatforms,
+    draftCount,
+    scheduledCount,
+    publishedCount
+  } = useSelector(selectPostStats);
 
   return (
-    <div className="stats-grid">
+    <div className="stats-grid render-tracker-container">
+      {/* Visual Render Counter Badge */}
+      <span className="render-badge">Stats Renders: {renderCount}</span>
+
       <div className="stat-card">
         <span className="stat-label">Total Posts</span>
         <span className="stat-value">{totalPosts}</span>
@@ -41,3 +45,6 @@ export const StatsPanel = () => {
     </div>
   );
 };
+
+// Wrap in React.memo to prevent re-renders unless store stats reference changes.
+export const StatsPanel = React.memo(StatsPanelComponent);

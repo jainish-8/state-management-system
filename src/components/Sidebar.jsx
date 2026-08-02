@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllPlatforms, togglePlatform, addPlatform } from '../store/platformsSlice';
 import { selectAllPosts } from '../store/postsSlice';
+import { useRenderCounter } from '../hooks/useRenderCounter';
 
-export const Sidebar = ({ selectedPlatform, onSelectPlatform }) => {
+const SidebarComponent = ({ selectedPlatform, onSelectPlatform }) => {
   const dispatch = useDispatch();
+  const renderCount = useRenderCounter();
+  
   const platforms = useSelector(selectAllPlatforms);
   const posts = useSelector(selectAllPosts);
 
@@ -15,7 +18,7 @@ export const Sidebar = ({ selectedPlatform, onSelectPlatform }) => {
   const [newMaxChars, setNewMaxChars] = useState(280);
   const [formError, setFormError] = useState('');
 
-  // Helper to count posts per platform
+  // Helper to count posts per platform - memoized internally if needed, or simple compute since platforms are few
   const getPostCount = (platformId) => {
     return posts.filter((p) => p.platformId === platformId).length;
   };
@@ -54,7 +57,10 @@ export const Sidebar = ({ selectedPlatform, onSelectPlatform }) => {
   };
 
   return (
-    <aside className="app-sidebar">
+    <aside className="app-sidebar render-tracker-container">
+      {/* Visual Render Counter Badge */}
+      <span className="render-badge">Sidebar Renders: {renderCount}</span>
+
       <div className="sidebar-section">
         <h3 className="sidebar-title">Publishing Channels</h3>
         <p className="sidebar-help">Toggle switch to enable/disable. Click channel to filter feed.</p>
@@ -170,3 +176,6 @@ export const Sidebar = ({ selectedPlatform, onSelectPlatform }) => {
     </aside>
   );
 };
+
+// Wrap in React.memo for re-render checks on selectedPlatform or callbacks
+export const Sidebar = React.memo(SidebarComponent);

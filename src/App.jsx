@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { fetchPosts } from './store/postsSlice';
 import { fetchPlatforms } from './store/platformsSlice';
@@ -19,17 +19,22 @@ function App() {
     dispatch(fetchPlatforms());
   }, [dispatch]);
 
-  const handleEditPost = (id) => {
+  // Memoize callback filters to satisfy React.memo referential comparisons in child components
+  const handleSelectPlatform = useCallback((platformId) => {
+    setSelectedPlatform(platformId);
+  }, []);
+
+  const handleEditPost = useCallback((id) => {
     setEditPostId(id);
     const formElement = document.getElementById('composer-section');
     if (formElement) {
       formElement.scrollIntoView({ behavior: 'smooth' });
     }
-  };
+  }, []);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditPostId(null);
-  };
+  }, []);
 
   return (
     <div className="app-container">
@@ -39,7 +44,7 @@ function App() {
         <div className="app-layout">
           <Sidebar
             selectedPlatform={selectedPlatform}
-            onSelectPlatform={setSelectedPlatform}
+            onSelectPlatform={handleSelectPlatform}
           />
           <div className="main-content">
             <div id="composer-section">
